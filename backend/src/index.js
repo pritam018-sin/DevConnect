@@ -1,23 +1,15 @@
-import express from "express";
-import dotenv from "dotenv";
-import connectDB from "./config/db.js";
+import dotenv from 'dotenv';
+import connectDB from './db/index.js';
+import app from './app.js';
 
-dotenv.config(); // .env file load karega
+dotenv.config({ path: './.env' }); // make sure path is correct
 
-// DB Connect
-connectDB();
-
-const app = express();
-
-// Middleware
-app.use(express.json());
-
-app.get("/", (req, res) => {
-  res.send("DevConnect API is running...");
-});
-
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+connectDB()
+    .then(() => {
+        app.listen(process.env.PORT || 3000, () => {
+            console.log(`✅ Server is running on http://localhost:${process.env.PORT || 3000}`);
+        });
+    })
+    .catch((error) => {
+        console.error("❌ Database connection failed:", error);
+    });
