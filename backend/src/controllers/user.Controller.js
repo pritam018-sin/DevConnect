@@ -29,7 +29,7 @@ const createUser = asyncHandler(async (req, res) => {
   if (existingUser) {
     throw new ApiError(409, "User already exists with this email or username");
   }
-   console.log("req.files:", req.files);
+   
   const avatarLocalPath = req.files?.avatar[0]?.path;
   const coverImageLocalPath = req.files?.coverImage[0]?.path;
 
@@ -39,8 +39,7 @@ const createUser = asyncHandler(async (req, res) => {
 
   const avatar = await cloudinaryUpload(avatarLocalPath);
   const coverImage = await cloudinaryUpload(coverImageLocalPath);
-  console.log("Avatar upload response:", avatar);
-  console.log("Cover Image upload response:", coverImage);
+
 
   if (!avatar) {
     throw new ApiError(400, "Avatar upload failed");
