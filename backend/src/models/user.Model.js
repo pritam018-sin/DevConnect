@@ -32,10 +32,38 @@ const userSchema = new mongoose.Schema(
     coverImage: {
       type: String, //cloudnary URL
     },
+    bio: {
+      type: String,
+      maxlength: 200,
+      default: "",
+    },
+    skills: {
+      type: [String],
+      default: [],
+    },
+    github: {
+      type: String,
+      default: "",
+    },
+    linkedin: {
+      type: String,
+      default: "",
+    },
+    portfolio: {
+      type: String,
+      default: "",
+    },
+
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    },
     password: {
       type: String,
       required: [true, "Password is required"],
     },
+
     refreshToken: {
       type: String,
     },
