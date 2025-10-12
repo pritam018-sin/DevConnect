@@ -1,8 +1,10 @@
 import {Router} from "express";
 import { 
+    changeCurrentPassword,
     createUser,
     loginUser,
-    logoutUser
+    logoutUser,
+    refreshAccessToken
  } from "../controllers/user.Controller.js";
 import { verifyJWT } from "../middlewares/auth.Middlewares.js";
 import { upload } from "../middlewares/mullter.Middlerware.js";
@@ -26,5 +28,7 @@ router.route("/login").post(loginUser)
 
 // Protected route example
 router.route("/logout").post(verifyJWT, logoutUser)
+router.route("/refresh-token").post(refreshAccessToken)
+router.route("/change-password").post(verifyJWT, changeCurrentPassword)
 
 export default router;
