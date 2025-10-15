@@ -3,8 +3,8 @@ import { User } from "../models/user.Model.js";
 import ApiError from "../utils/apiError.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import { cloudinaryUpload } from "../utils/cloudnaryService.js";
-import jwt from 'jsonwebtoken';
-import mongoose from 'mongoose';
+import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 const generateAccessTokenRefreshToken = async (userId) => {
   try {
@@ -206,35 +206,58 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 });
 
 const changeCurrentPassword = asyncHandler(async (req, res) => {
-  const {oldPassword, newPassword} = req.body;
+  const { oldPassword, newPassword } = req.body;
 
   // Validate request body
-    if (!oldPassword || !newPassword) {
-        throw new ApiError(400, "Current password and new password are required");
-    }
+  if (!oldPassword || !newPassword) {
+    throw new ApiError(400, "Current password and new password are required");
+  }
 
-    const user = await User.findById(req.user._id);
+  const user = await User.findById(req.user._id);
 
-    if(!user){
-      throw new ApiError(404, "User not found");
-    }
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
 
-    const isPasswordValid = await user.isPasswordCorrect(oldPassword);
-    if (!isPasswordValid) {
-      throw new ApiError(401, "Current password is incorrect");
-    }
-    user.password = newPassword;
-    await user.save({validateBeforeSave: false});
+  const isPasswordValid = await user.isPasswordCorrect(oldPassword);
+  if (!isPasswordValid) {
+    throw new ApiError(401, "Current password is incorrect");
+  }
+  user.password = newPassword;
+  await user.save({ validateBeforeSave: false });
 
-    return res.status(200).json(
-        new ApiResponse(200, {}, "Password changed successfully")
-    );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Password changed successfully"));
 });
+const updateAccountDetails = asyncHandler(async (req, res) => {
+  const { fullname, email } = req.body;
 
-export { 
+  // Validate request body
+  if (!fullname && !email) {
+    throw new ApiError(400, "Name or email is required");
+  }
+
+  // Find user and update details
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        fullname,
+        email,
+      },
+    },
+    { new: true }
+  ).select("-password");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Account details updated successfully"));
+});
+export {
   createUser,
   loginUser,
   logoutUser,
   refreshAccessToken,
-  changeCurrentPassword
+  changeCurrentPassword,
 };
