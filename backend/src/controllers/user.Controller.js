@@ -231,33 +231,39 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Password changed successfully"));
 });
 const updateAccountDetails = asyncHandler(async (req, res) => {
-  const { fullname, email } = req.body;
+  const { fullname, username, email, bio, skills, github, linkedin, portfolio } = req.body;
 
-  // Validate request body
-  if (!fullname && !email) {
-    throw new ApiError(400, "Name or email is required");
+ 
+  const user = await User.findById(req.user?._id);
+  if (!user) {
+    throw new ApiError(404, "User not found");
   }
 
-  // Find user and update details
-  const user = await User.findByIdAndUpdate(
-    req.user?._id,
-    {
-      $set: {
-        fullname,
-        email,
-      },
-    },
-    { new: true }
-  ).select("-password");
+  // Ab sirf wahi fields update karo jo nayi mili hain
+  user.fullname = fullname?.trim() || user.fullname;
+  user.username = username?.trim() || user.username;
+  user.email = email?.trim() || user.email;
+  user.bio = bio ?? user.bio;
+  user.skills = skills ?? user.skills;
+  user.github = github ?? user.github;
+  user.linkedin = linkedin ?? user.linkedin;
+  user.portfolio = portfolio ?? user.portfolio;
+
+  // Save updated user
+  await user.save();
+
+  const updatedUser = await User.findById(req.user?._id).select("-password");
 
   return res
     .status(200)
-    .json(new ApiResponse(200, user, "Account details updated successfully"));
+    .json(new ApiResponse(200, updatedUser, "Account details updated successfully"));
 });
+
 export {
   createUser,
   loginUser,
   logoutUser,
   refreshAccessToken,
   changeCurrentPassword,
+  updateAccountDetails,
 };
