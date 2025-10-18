@@ -2,6 +2,8 @@ import {Router} from "express";
 import { 
     changeCurrentPassword,
     createUser,
+    getUserProfileById,
+    getUserProfileByUsername,
     loginUser,
     logoutUser,
     refreshAccessToken,
@@ -35,6 +37,8 @@ router.route("/refresh-token").post(refreshAccessToken)
 router.route("/change-password").post(verifyJWT, changeCurrentPassword)
 router.route("/update-account").put(verifyJWT, updateAccountDetails)
 router.route("/update-avatar").put(verifyJWT, upload.single("avatar"), updateAvatar);
-router.route("/update-cover-image").put(verifyJWT, upload.single("coverImage"), updateCoverImage)
+router.route("/update-cover-image").put(verifyJWT, upload.single("coverImage"), updateCoverImage);
+router.route("/user/:userId").get(verifyJWT, getUserProfileById)
+router.route("/user/:username").get(verifyJWT, getUserProfileByUsername)
 
 export default router;

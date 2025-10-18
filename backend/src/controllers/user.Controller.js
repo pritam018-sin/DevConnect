@@ -232,9 +232,17 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 });
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
-  const { fullname, username, email, bio, skills, github, linkedin, portfolio } = req.body;
+  const {
+    fullname,
+    username,
+    email,
+    bio,
+    skills,
+    github,
+    linkedin,
+    portfolio,
+  } = req.body;
 
- 
   const user = await User.findById(req.user?._id);
   if (!user) {
     throw new ApiError(404, "User not found");
@@ -257,17 +265,18 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, updatedUser, "Account details updated successfully"));
+    .json(
+      new ApiResponse(200, updatedUser, "Account details updated successfully")
+    );
 });
 
 const updateAvatar = asyncHandler(async (req, res) => {
-
   const avatarLocalPath = req.file?.path;
-  if(!avatarLocalPath){
+  if (!avatarLocalPath) {
     throw new ApiError(400, "Avatar file is required");
   }
   const avatar = await cloudinaryUpload(avatarLocalPath);
-  if(!avatar){
+  if (!avatar) {
     throw new ApiError(500, "Avatar upload failed");
   }
 
@@ -276,14 +285,14 @@ const updateAvatar = asyncHandler(async (req, res) => {
     {
       $set: {
         avatar: avatar?.url,
-      }
+      },
     },
     {
       new: true,
     }
   );
 
-  if(!user){
+  if (!user) {
     throw new ApiError(404, "User not found");
   }
 
@@ -291,14 +300,14 @@ const updateAvatar = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, user, "Avatar updated successfully"));
 });
-const updateCoverImage = asyncHandler(async (req, res) => {
 
+const updateCoverImage = asyncHandler(async (req, res) => {
   const coverImageLocalPath = req.file?.path;
-  if(!coverImageLocalPath){
+  if (!coverImageLocalPath) {
     throw new ApiError(400, "Cover image file is required");
   }
   const coverImage = await cloudinaryUpload(coverImageLocalPath);
-  if(!coverImage){
+  if (!coverImage) {
     throw new ApiError(500, "Cover image upload failed");
   }
 
@@ -307,20 +316,185 @@ const updateCoverImage = asyncHandler(async (req, res) => {
     {
       $set: {
         coverImage: coverImage?.url,
-      }
+      },
     },
     {
       new: true,
     }
   );
 
-  if(!user){
+  if (!user) {
     throw new ApiError(404, "User not found");
   }
 
   return res
     .status(200)
     .json(new ApiResponse(200, user, "Cover image updated successfully"));
+});
+
+const getUserProfileById = asyncHandler(async (req, res) => {
+  const userId = new mongoose.Types.ObjectId(req.user._id);
+
+  const userWithStats = await User.aggregate([
+    { $match: { _id: userId } },
+
+    // 👇 Followers Lookup
+    {
+      $lookup: {
+        from: "follows",
+        let: { uid: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $eq: ["$following", "$$uid"] },
+            },
+          },
+        ],
+        as: "followers",
+      },
+    },
+
+    // 👇 Following Lookup
+    {
+      $lookup: {
+        from: "follows",
+        let: { uid: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $eq: ["$follower", "$$uid"] },
+            },
+          },
+        ],
+        as: "following",
+      },
+    },
+
+    // 👇 Add followersCount and followingCount fields
+    {
+      $addFields: {
+        followersCount: { $size: "$followers" },
+        followingCount: { $size: "$following" },
+      },
+    },
+
+    // 👇 Final projection
+    {
+      $project: {
+        username: 1,
+        fullname: 1,
+        email: 1,
+        avatar: 1,
+        coverImage: 1,
+        bio: 1,
+        skills: 1,
+        github: 1,
+        linkedin: 1,
+        portfolio: 1,
+        createdAt: 1,
+        followersCount: 1,
+        followingCount: 1,
+      },
+    },
+  ]);
+
+  if (!userWithStats || userWithStats.length === 0) {
+    return res
+      .status(404)
+      .json(new ApiResponse(404, null, "User not found"));
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "Current user fetched successfully",  userWithStats[0]));
+});
+
+const getUserProfileByUsername = asyncHandler(async (req, res) => {
+  const { username } = req.params;
+
+  if (!username) throw new ApiError(400, "Username is required");
+
+  const userProfile = await User.aggregate([
+    {
+      $match: {
+        username: username.toLowerCase(), // usernames should be case-insensitive
+      },
+    },
+
+    // 👇 Followers lookup
+    {
+      $lookup: {
+        from: "follows",
+        let: { uid: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $eq: ["$following", "$$uid"] },
+            },
+          },
+        ],
+        as: "followers",
+      },
+    },
+
+    // 👇 Following lookup
+    {
+      $lookup: {
+        from: "follows",
+        let: { uid: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $eq: ["$follower", "$$uid"] },
+            },
+          },
+        ],
+        as: "following",
+      },
+    },
+
+    // 👇 Add stats
+    {
+      $addFields: {
+        followersCount: { $size: "$followers" },
+        followingCount: { $size: "$following" },
+      },
+    },
+
+    // 👇 Final projection (public-safe)
+    {
+      $project: {
+        password: 0,
+        email: 0, // optional: hide for public profiles
+        followers: 0,
+        following: 0,
+        refreshToken: 0,
+        __v: 0,
+        createdAt: 1,
+        fullname: 1,
+        username: 1,
+        bio: 1,
+        skills: 1,
+        avatar: 1,
+        coverImage: 1,
+        github: 1,
+        linkedin: 1,
+        portfolio: 1,
+        followersCount: 1,
+        followingCount: 1,
+      },
+    },
+  ]);
+
+  if (!userProfile || userProfile.length === 0) {
+    throw new ApiError(404, "User not found");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, userProfile[0], "User profile fetched successfully")
+    );
 });
 
 export {
@@ -332,4 +506,6 @@ export {
   updateAccountDetails,
   updateAvatar,
   updateCoverImage,
+  getUserProfileById,
+  getUserProfileByUsername,
 };
