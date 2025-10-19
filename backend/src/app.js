@@ -15,7 +15,9 @@ app.use(express.static("public"));// Serve static files from the 'public' direct
 app.use(cookieParser());
 
 import userRoutes from "./routes/user.Routes.js"
+import postRoutes from "./routes/post.Routes.js"
 
 app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/posts", postRoutes);
 
 export default app;
