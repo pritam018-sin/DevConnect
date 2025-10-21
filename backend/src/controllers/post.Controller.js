@@ -3,6 +3,7 @@ import ApiError from "../utils/apiError.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import { Post } from "../models/post.Model.js";
 import {User} from "../models/user.Model.js";
+import { Comment} from "../models/comment.Model.js";
 import { cloudinaryUpload } from "../utils/cloudnaryService.js";
 
 const createPost = asyncHandler(async (req, res) => {
@@ -99,8 +100,48 @@ const editPost = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, updatedPost, "Post updated successfully"));
 });
 
-export { 
-    createPost,
-    editPost,
- };
+const deletePost = asyncHandler(async (req, res) => {
+  const postId = req.params.postId
 
+  const post = await Post.findById(postId);
+  if(!post){
+    throw new ApiError(404, "Post not found");
+  }
+
+  // ✅ Check authorization
+  if (post.author.toString() !== req.user._id.toString()) {
+    throw new ApiError(403, "You are not authorized to delete this post");
+  }
+
+  // ✅ Delete post from DB
+  await Post.findByIdAndDelete(postId);
+
+  // ✅ Response
+  return res
+    .status(200)
+    .json(new ApiResponse(200, null, "Post deleted successfully"));
+});
+
+const getPostById = asyncHandler(async (req, res) => {
+  const postId = req.params.postId;
+
+  const post = await Post.findById(postId)
+    .populate("author", "fullname username avatar")
+    .populate("comments.author", "fullname avatar");
+  if (!post) {
+    throw new ApiError(404, "Post not found");
+  }
+
+  // ✅ Response
+  return res
+    .status(200)
+    .json(new ApiResponse(200, post, "Post fetched successfully"));
+});
+
+
+export {
+  createPost,
+  editPost,
+  deletePost,
+  getPostById,
+};
