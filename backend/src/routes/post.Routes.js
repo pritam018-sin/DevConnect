@@ -6,6 +6,7 @@ import {
     deletePost,
     editPost,
     getPostById,
+    getUserFeed,
 
  } from "../controllers/post.Controller.js";
 
@@ -15,5 +16,6 @@ import {
  router.route("/post/:postId").put(verifyJWT, editPost)
  router.route("/post/:postId").delete(verifyJWT, deletePost)
  router.route("/post/:postId").get(verifyJWT, getPostById)
+ router.route("/feed").get(verifyJWT, getUserFeed)
 
  export default router;

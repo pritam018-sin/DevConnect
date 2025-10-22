@@ -4,6 +4,7 @@ import { ApiResponse } from "../utils/apiResponse.js";
 import { Post } from "../models/post.Model.js";
 import {User} from "../models/user.Model.js";
 import { Comment} from "../models/comment.Model.js";
+import { Follow} from "../models/follow.Model.js";
 import { cloudinaryUpload } from "../utils/cloudnaryService.js";
 
 const createPost = asyncHandler(async (req, res) => {
@@ -138,10 +139,67 @@ const getPostById = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, post, "Post fetched successfully"));
 });
 
+const getUserFeed = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const followingDocs = await Follow.find({ follower: userId }).select("following");
+  const followingIds = followingDocs.map(f => f.following);
+
+  followingIds.push(userId);
+
+  const feedPosts = await Post.aggregate([
+    {
+      $match: {
+        author: { $in: followingIds },
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "author",
+        foreignField: "_id",
+        as: "author",
+      },
+    },
+    {
+      $unwind: "$author",
+    },
+    {
+      $project: {
+        _id: 1,
+        content: 1,
+        image: 1,
+        createdAt: 1,
+        "author._id": 1,
+        "author.fullname": 1,
+        "author.username": 1,
+        "author.avatar": 1,
+      },
+    },
+    { $sort: { createdAt: -1 } },
+    { $skip: skip },
+    { $limit: limit },
+  ]);
+
+  if(!feedPosts.length){
+    throw new ApiError(404, "No posts found in your feed");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, feedPosts, "User feed fetched successfully"));
+});
+
+
 
 export {
   createPost,
   editPost,
   deletePost,
   getPostById,
+  getUserFeed,
 };
