@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
 
-const postSchema = new mongoose.Schema({
-     author: {
+const postSchema = new mongoose.Schema(
+  {
+    author: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User", // connects post to user
       required: true,
@@ -15,7 +16,10 @@ const postSchema = new mongoose.Schema({
     image: {
       type: String, // Cloudinary URL ya local path
     },
-
+    isPinned: {
+      type: Boolean,
+      default: false,
+    },
     likeCount: {
       type: Number,
       default: 0,
@@ -31,6 +35,6 @@ const postSchema = new mongoose.Schema({
   {
     timestamps: true,
   }
-)
+);
 
 export const Post = mongoose.model("Post", postSchema);

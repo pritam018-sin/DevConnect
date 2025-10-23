@@ -194,6 +194,50 @@ const getUserFeed = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, feedPosts, "User feed fetched successfully"));
 });
 
+const getPostsByUsername = asyncHandler(async (req, res) => {
+  const { username } = req.params;
+
+  const user = await User.findOne({ username });
+  if (!user) throw new ApiError(404, "User not found");
+
+  const posts = await Post.find({ author: user._id })
+    .populate("author", "fullname username avatar")
+    .sort({ createdAt: -1 });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, posts, "Posts by user fetched successfully"));
+});
+
+const getUserAllPosts = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  const posts = await Post.find({ author: userId })
+    .populate("author", "fullname username avatar")
+    .sort({ createdAt: -1 });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, posts, "All user posts fetched successfully"));
+});
+
+const togglePinnedPost = asyncHandler(async (req, res) => {
+  const { postId } = req.params;
+
+  const post = await Post.findOne({ _id: postId, author: req.user._id })
+  .populate("author", "fullname username avatar");
+  if (!post) throw new ApiError(404, "Post not found or unauthorized");
+
+  post.isPinned = !post.isPinned;
+  await post.save();
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, post, `Post ${post.isPinned ? "pinned" : "unpinned"} successfully`));
+});
+
+
+
 
 
 export {
@@ -202,4 +246,7 @@ export {
   deletePost,
   getPostById,
   getUserFeed,
+  getPostsByUsername,
+  getUserAllPosts,
+  togglePinnedPost,
 };
