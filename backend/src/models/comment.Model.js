@@ -2,10 +2,15 @@ import mongoose from "mongoose";
 
 const commentSchema = new mongoose.Schema(
   {
-    post: {
+    parentId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Post",
       required: true,
+      refPath: "parentType", // dynamic reference
+    },
+    parentType: {
+      type: String,
+      required: true,
+      enum: ["Post", "Project"], // can expand in future
     },
     author: {
       type: mongoose.Schema.Types.ObjectId,
@@ -23,7 +28,6 @@ const commentSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
-    // Recursive replies (each reply is also a comment)
     replies: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -39,15 +43,11 @@ const commentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// ✅ Ensure unique likes per user per comment
-commentSchema.index({ _id: 1, "likes": 1 }, { unique: true, sparse: true });
+commentSchema.index({ _id: 1, likes: 1 }, { unique: true, sparse: true });
 
 // Auto populate for nested replies (if needed)
 commentSchema.pre(/^find/, function (next) {
-  this.populate({
-    path: "author",
-    select: "username fullname avatar",
-  });
+  this.populate({ path: "author", select: "username fullname avatar" });
   next();
 });
 
