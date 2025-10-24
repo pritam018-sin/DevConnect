@@ -235,8 +235,52 @@ const togglePinnedPost = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, post, `Post ${post.isPinned ? "pinned" : "unpinned"} successfully`));
 });
+ 
+const repost = asyncHandler(async (req, res) => {
+  const { postId } = req.params;
 
+  // ✅ Find original post
+  const originalPost = await Post.findById(postId)
+    .populate("author", "fullname username avatar");
 
+  if (!originalPost) {
+    throw new ApiError(404, "Original post not found");
+  }
+
+  // ✅ Prevent self-repost
+  if (originalPost.author._id.toString() === req.user._id.toString()) {
+    throw new ApiError(400, "You cannot repost your own post");
+  }
+
+  // ✅ Prevent duplicate repost (same user reposting same post again)
+  const alreadyReposted = await Post.findOne({
+    author: req.user._id,
+    repostedFrom: originalPost._id,
+  });
+  if (alreadyReposted) {
+    throw new ApiError(400, "You already reposted this post");
+  }
+
+  // ✅ Create repost
+  const repost = await Post.create({
+    author: req.user._id,
+    repostedFrom: originalPost._id,
+  });
+
+  // ✅ Populate full data (both repost author & original author)
+  const populatedRepost = await Post.findById(repost._id)
+    .populate("author", "fullname username avatar")
+    .populate({
+      path: "repostedFrom",
+      populate: { path: "author", select: "fullname username avatar" },
+    });
+
+  return res
+    .status(201)
+    .json(new ApiResponse(201, populatedRepost, "Post reposted successfully"));
+});
+
+//abhi analytics baaki hai
 
 
 
@@ -249,4 +293,5 @@ export {
   getPostsByUsername,
   getUserAllPosts,
   togglePinnedPost,
+  repost,
 };

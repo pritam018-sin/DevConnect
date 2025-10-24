@@ -9,6 +9,7 @@ import {
     getPostsByUsername,
     getUserAllPosts,
     getUserFeed,
+    repost,
     togglePinnedPost,
 
  } from "../controllers/post.Controller.js";
@@ -23,5 +24,6 @@ import {
  router.route("/:username").get(verifyJWT, getPostsByUsername)
  router.route("/user-profile/posts").get(verifyJWT, getUserAllPosts)
  router.route("/post/pin/:postId").patch(verifyJWT, togglePinnedPost)
+ router.route("/post/repost/:postId").post(verifyJWT, repost)
 
  export default router;
