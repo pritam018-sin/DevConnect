@@ -510,4 +510,5 @@ export {
   updateCoverImage,
   getUserProfileById,
   getUserProfileByUsername,
+
 };

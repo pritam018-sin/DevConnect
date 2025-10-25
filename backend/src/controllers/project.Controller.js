@@ -85,8 +85,71 @@ const getProjectById = asyncHandler(async (req, res) => {
     res.status(200).json(new ApiResponse(200, project, "Project fetched successfully"));
 });
 
+const getProjectByUsername = asyncHandler(async (req, res) => {
+    const { username } = req.params;
+
+    const user = await User.findOne({ username });
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+
+    const projects = await Project.find({ author: user._id })
+    .populate("author", "fullname username avatar")
+    .populate("comments")
+    .sort({ createdAt: -1 });
+
+    res.status(200).json(new ApiResponse(200, "Projects fetched successfully", projects));
+});
+
+const updateProject = asyncHandler(async (req, res) => {
+  const { projectId } = req.params;
+
+  const project = await Project.findById(projectId);
+  if (!project) throw new ApiError(404, "Project not found");
+
+  if (!project.author._id.equals(req.user._id))
+    throw new ApiError(403, "You are not authorized to update this project");
+
+  const updateFields = req.body;
+
+  Object.keys(updateFields).forEach((key) => {
+    project[key] = updateFields[key] ?? project[key];
+  });
+
+  await project.save();
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, project, "Project updated successfully"));
+});
+
+const deleteProject = asyncHandler(async (req, res) => {
+  const { projectId } = req.params;
+
+  const project = await Project.findById(projectId);
+  if (!project) {
+    throw new ApiError(404, "Project not found");
+  }
+
+  
+  if (String(project.author._id) !== String(req.user._id)) {
+    throw new ApiError(403, "You are not authorized to delete this project");
+  }
+
+  await project.deleteOne();
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, null, "Project deleted successfully"));
+});
+
+//analitics part can be added later
+
 export {
     createProject,
     getAllProjects,
-    getProjectById
+    getProjectById,
+    getProjectByUsername,
+    updateProject,
+    deleteProject
 };
