@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const projectSchema = new mongoose.Schema(
   {
-    owner: {
+    author: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
