@@ -497,7 +497,7 @@ const getUserProfileByUsername = asyncHandler(async (req, res) => {
     );
 });
 
-//admin thinks baaki hai 
+//admin thing's baaki hai 
 
 export {
   createUser,

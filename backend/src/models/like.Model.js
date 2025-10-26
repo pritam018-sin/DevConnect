@@ -7,18 +7,22 @@ const likeSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    post: {
+    parentId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Post",
+      required: true,
+    },
+    parentType: {
+      type: String,
+      enum: ["Post", "Project", "Comment"],
       required: true,
     },
   },
   {
-    timestamps: true, // for tracking when the like happened
+    timestamps: true,
   }
 );
 
-// ✅ Prevent duplicate likes by same user on same post
-likeSchema.index({ user: 1, post: 1 }, { unique: true });
+// ✅ Prevent duplicate likes (same user cannot like same post/project/comment twice)
+likeSchema.index({ user: 1, parentId: 1, parentType: 1 }, { unique: true });
 
 export const Like = mongoose.model("Like", likeSchema);
