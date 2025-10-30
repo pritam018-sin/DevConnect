@@ -23,6 +23,7 @@ import commentRoutes from './routes/comment.Routes.js';
 import projectRoutes from './routes/project.Routes.js';
 import likeRoutes from './routes/like.Routes.js';
 import followRoutes from './routes/follow.Routes.js';
+import notificationRoutes from './routes/notification.Routes.js';
 
 // Routes use
 app.use('/api/v1/users', userRoutes);
@@ -31,6 +32,7 @@ app.use('/api/v1/comments', commentRoutes);
 app.use('/api/v1/projects', projectRoutes);
 app.use('/api/v1/likes', likeRoutes);
 app.use('/api/v1/follows', followRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
 
 // HTTP + Socket.io setup
 const server = http.createServer(app);
