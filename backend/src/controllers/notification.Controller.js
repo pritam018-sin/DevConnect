@@ -23,6 +23,7 @@ const createNotification = asyncHandler(async (req, res) => {
       link
     });
 
+    
     // Emit notification event
     const io = req.app.get("io");
     if (io) {
