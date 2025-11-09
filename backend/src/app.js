@@ -24,6 +24,7 @@ import projectRoutes from './routes/project.Routes.js';
 import likeRoutes from './routes/like.Routes.js';
 import followRoutes from './routes/follow.Routes.js';
 import notificationRoutes from './routes/notification.Routes.js';
+import messageRoutes from './routes/message.Routes.js';
 
 // Routes use
 app.use('/api/v1/users', userRoutes);
@@ -33,6 +34,7 @@ app.use('/api/v1/projects', projectRoutes);
 app.use('/api/v1/likes', likeRoutes);
 app.use('/api/v1/follows', followRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/messages', messageRoutes);
 
 // HTTP + Socket.io setup
 const server = http.createServer(app);
