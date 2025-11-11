@@ -2,6 +2,8 @@ import { Message } from "../models/message.Model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import ApiError from "../utils/apiError.js";
 import { ApiResponse } from "../utils/apiResponse.js";
+import mongoose from "mongoose";
+import { User } from "../models/user.Model.js";
 
 
 // 🟩 Send new message

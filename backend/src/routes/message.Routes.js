@@ -8,12 +8,12 @@ import {
   deleteMessage,
   markMessagesAsRead,
 } from "../controllers/message.Controller.js"; // ✅ fixed name consistency
-import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { verifyJWT } from "../middlewares/auth.Middlewares.js";
 
 const router = Router();
 
 // 🟢 Send message
-router.route("/send").post(verifyJWT, sendMessage);
+router.route("/").post(verifyJWT, sendMessage);
 
 // 🟩 Get all messages between logged user and receiver
 router.get("/:receiverId", verifyJWT, getMessages);
