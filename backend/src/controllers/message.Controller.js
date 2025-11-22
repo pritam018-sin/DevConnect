@@ -1,31 +1,39 @@
-import { Message } from "../models/message.Model.js";
+import { Message } from "../models/message.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import ApiError from "../utils/apiError.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 import mongoose from "mongoose";
 import { User } from "../models/user.Model.js";
+import { io, onlineUsers } from "../socket/socket.js";
 
 
 // 🟩 Send new message
 export const sendMessage = asyncHandler(async (req, res) => {
-    const { receiverId, content } = req.body;
-    const senderId = req.user._id;
+  const { receiverId, content } = req.body;
+  const senderId = req.user._id;
 
-    if (!receiverId || !content) {
-     throw new ApiError(400, "Post must have either content or receiverId");
-    }
-    const newMessage = await Message.create({
-      sender: senderId,
-      receiver: receiverId,
-      content,
-    });
-    if (!newMessage) {
-      throw new ApiError(500, "Something went wrong while sending the message");
-    }
-    return res
-      .status(201)
-      .json(new ApiResponse(201, newMessage, "Message sent successfully"));
-}) 
+  if (!receiverId || !content) {
+    throw new ApiError(400, "Post must have either content or receiverId");
+  }
+  const newMessage = await Message.create({
+    sender: senderId,
+    receiver: receiverId,
+    content,
+  });
+  if (!newMessage) {
+    throw new ApiError(500, "Something went wrong while sending the message");
+  }
+
+  // Emit to receiver if online
+  const receiverSocketId = onlineUsers.get(receiverId);
+  if (receiverSocketId) {
+    io.to(receiverSocketId).emit("receiveMessage", newMessage);
+  }
+
+  return res
+    .status(201)
+    .json(new ApiResponse(201, newMessage, "Message sent successfully"));
+})
 
 
 // 🟦 Fetch all messages between logged user and receiver
@@ -102,3 +110,58 @@ export const deleteMessage = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+// 🟪 Get Conversations (Sidebar users)
+export const getConversations = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+  const conversations = await Message.aggregate([
+    {
+      $match: {
+        $or: [{ sender: userId }, { receiver: userId }]
+      }
+    },
+    {
+      $sort: { createdAt: -1 }
+    },
+    {
+      $group: {
+        _id: {
+          $cond: {
+            if: { $eq: ["$sender", userId] },
+            then: "$receiver",
+            else: "$sender"
+          }
+        },
+        lastMessage: { $first: "$$ROOT" }
+      }
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "_id",
+        foreignField: "_id",
+        as: "userDetails"
+      }
+    },
+    {
+      $unwind: "$userDetails"
+    },
+    {
+      $project: {
+        _id: 1,
+        "userDetails.username": 1,
+        "userDetails.fullName": 1,
+        "userDetails.avatar": 1,
+        lastMessage: 1
+      }
+    },
+    {
+      $sort: { "lastMessage.createdAt": -1 }
+    }
+  ]);
+
+  return res.status(200).json(
+    new ApiResponse(200, conversations, "Conversations fetched successfully")
+  );
+});

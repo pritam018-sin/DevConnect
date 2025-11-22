@@ -7,6 +7,7 @@ import {
   editMessage,
   deleteMessage,
   markMessagesAsRead,
+  getConversations
 } from "../controllers/message.Controller.js"; // ✅ fixed name consistency
 import { verifyJWT } from "../middlewares/auth.Middlewares.js";
 
@@ -14,6 +15,9 @@ const router = Router();
 
 // 🟢 Send message
 router.route("/").post(verifyJWT, sendMessage);
+
+// 🟣 Get Conversations (Sidebar)
+router.get("/conversations", verifyJWT, getConversations);
 
 // 🟩 Get all messages between logged user and receiver
 router.get("/:receiverId", verifyJWT, getMessages);
