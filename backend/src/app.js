@@ -16,6 +16,13 @@ app.use(express.urlencoded({ extended: true, limit: '30kb' }));
 app.use(express.static('public'));
 app.use(cookieParser());
 
+// Debug Middleware: Log every request
+app.use((req, res, next) => {
+  console.log(`\n[REQUEST] ${req.method} ${req.url}`);
+  console.log("[BODY]", JSON.stringify(req.body, null, 2));
+  next();
+});
+
 // Routes import
 import userRoutes from './routes/user.Routes.js';
 import postRoutes from './routes/post.Routes.js';
@@ -39,5 +46,9 @@ app.use('/api/v1/messages', messageRoutes);
 // HTTP + Socket.io setup
 const server = http.createServer(app);
 setupSocket(server);
+
+// Error Handling Middleware
+import { errorHandler } from './middlewares/error.Middleware.js';
+app.use(errorHandler);
 
 export default server;

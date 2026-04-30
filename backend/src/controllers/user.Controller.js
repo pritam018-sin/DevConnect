@@ -92,6 +92,7 @@ const createUser = asyncHandler(async (req, res) => {
 
 const loginUser = asyncHandler(async (req, res) => {
   const { email, username, password } = req.body;
+  console.log("Login Attempt:", { email, username, password }); // Debug Log
 
   if (!(username || email)) {
     throw new ApiError(400, "username or email is required");
@@ -101,9 +102,12 @@ const loginUser = asyncHandler(async (req, res) => {
     $or: [{ username }, { email }],
   });
   if (!user) {
+    console.log("Login Failed: User not found"); // Debug Log
     throw new ApiError(404, "User does not exist");
   }
   const isPasswordValid = await user.isPasswordCorrect(password);
+  console.log("Password Validation:", isPasswordValid); // Debug Log
+
   if (!isPasswordValid) {
     throw new ApiError(401, "Invalid credentials");
   }
@@ -120,7 +124,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
   const options = {
     httpOnly: true,
-    secure: true,
+    secure: process.env.NODE_ENV === "production",
   };
   return res
     .status(200)
@@ -161,7 +165,7 @@ const logoutUser = asyncHandler(async (req, res) => {
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
   const incomingRefreshToken =
-    req.cookies.refreshToken || req.body.refreshToken;
+    req.cookies?.refreshToken || req.body.refreshToken;
   if (!incomingRefreshToken) {
     throw new ApiError(401, "Unauthrized request, no refresh token");
   }
@@ -181,7 +185,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     }
     const options = {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === "production",
     };
     const { accessToken, newRefreshToken } =
       await generateAccessTokenRefreshToken(user._id);
@@ -406,7 +410,7 @@ const getUserProfileById = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, "Current user fetched successfully",  userWithStats[0]));
+    .json(new ApiResponse(200, "Current user fetched successfully", userWithStats[0]));
 });
 
 const getUserProfileByUsername = asyncHandler(async (req, res) => {
